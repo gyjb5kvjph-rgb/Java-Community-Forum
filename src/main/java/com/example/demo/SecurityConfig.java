@@ -29,7 +29,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authorize -> authorize
                         // ルート("/")、"/css/**"、"/register" は誰でもアクセス可能
-                        .requestMatchers("/", "/css/**", "/register").permitAll()
+                        .requestMatchers("/", "/css/**", "/register", "/actuator/health").permitAll()
                         // "/new", "/edit/**", "/delete/**" は認証されたユーザー (ログインした人) のみアクセス可能
                         .requestMatchers("/new", "/edit/**", "/delete/**", "/create", "/update").authenticated()
                         // その他のリクエストはすべて許可 (今回は上記以外は特にないが念のため)

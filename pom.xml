@@ -66,12 +66,18 @@
             <artifactId>thymeleaf-extras-springsecurity6</artifactId>
         </dependency>
 
-        <!-- ▼▼▼ これが不足しています ▼▼▼ -->
         <!-- PostgreSQL ドライバ (Renderデプロイに必須) -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- ▼▼▼ これを追加 ▼▼▼ -->
+        <!-- Spring Boot Actuator (ヘルスチェック用) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <!-- ▲▲▲ ここまで ▲▲▲ -->
 
