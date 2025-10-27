@@ -1,0 +1,58 @@
+/* ページ全体の基本設定 */
+body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, sans-serif;
+    margin: 20px;
+    background-color: #f4f4f4; /* 少し薄いグレーの背景色 */
+    color: #333; /* 基本の文字色 */
+}
+
+/* h1 (大見出し) のスタイル */
+h1 {
+    color: #005a9c; /* 濃い青色 */
+    border-bottom: 2px solid #005a9c;
+    padding-bottom: 10px;
+}
+
+/* 投稿一つひとつの囲い (div) */
+div[th\\:each] { /* Thymeleafの th:each が付いたdivを狙うトリッキーな指定 */
+    background-color: #ffffff; /* 白色の背景 */
+    border: 1px solid #ddd;
+    border-radius: 8px; /* 角を丸くする */
+    padding: 15px;
+    margin-bottom: 15px; /* 下の投稿との隙間 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 薄い影をつける */
+}
+
+/* リンク (aタグ) のスタイル */
+a {
+    color: #007bff;
+    text-decoration: none; /* 下線を消す */
+}
+
+a:hover {
+    text-decoration: underline; /* マウスを乗せたら下線を出す */
+}
+
+/* ボタン (submit) のスタイル */
+button[type="submit"] {
+    background-color: #007bff; /* 青色 */
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer; /* マウスカーソルを指の形にする */
+    font-size: 16px;
+}
+
+button[type="submit"]:hover {
+    background-color: #0056b3; /* マウスを乗せたら少し濃い青に */
+}
+
+/* フォームの入力欄 */
+input[type="text"], textarea {
+    width: 90%;
+    max-width: 500px; /* 横幅が広くなりすぎないように */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}

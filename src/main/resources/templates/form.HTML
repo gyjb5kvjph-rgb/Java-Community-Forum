@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org"xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <title>新規投稿</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div style="text-align: right; margin-bottom: 10px;">
+    <div sec:authorize="isAuthenticated()">
+        こんにちは, <strong sec:authentication="name"></strong> さん |
+        <form th:action="@{/logout}" method="post" style="display: inline;">
+            <button type="submit" style="background: none; border: none; color: #007bff; cursor: pointer; padding: 0;">ログアウト</button>
+        </form>
+    </div>
+    <div sec:authorize="isAnonymous()">
+        <a href="/login">ログイン</a> | <a href="/register">新規登録</a>
+    </div>
+</div>
+<h1>新規投稿</h1>
+
+<form th:action="@{/create}" method="post" th:object="${post}">
+    <div>
+        <label for="title">タイトル:</label><br>
+        <input type="text" id="title" th:field="*{title}" style="width: 300px;">
+    </div>
+    <div style="margin-top: 10px;">
+        <label for="content">本文:</label><br>
+        <textarea id="content" rows="5" cols="40" th:field="*{content}"></textarea>
+    </div>
+    <div style="margin-top: 10px;">
+        <button type="submit">投稿する</button>
+    </div>
+</form>
+</body>
+</html>
