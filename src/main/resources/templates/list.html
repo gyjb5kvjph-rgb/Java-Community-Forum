@@ -59,15 +59,13 @@
                     th:data-csrf-header="${_csrf.headerName}"
                     sec:authorize="isAuthenticated()"
                     th:classappend="${#lists.contains(currentUserLikePostIds, post.id)} ? 'liked' : ''">
-                <!-- ハートマークのSVGアイコン -->
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="like-icon">
-                    <path d="m11.645 20.91-1.414-1.414A10.006 10.006 0 0 1 4 11.586V7.5a4.5 4.5 0 0 1 4.5-4.5h.707A4.5 4.5 0 0 1 13.5 6.707V11.5a4.5 4.5 0 0 1-1.855 3.571l-.001.001Z" />
-                    <path d="M17.5 3A4.5 4.5 0 0 0 13 7.5v4.086c0 1.343.303 2.628.855 3.821l-1.414 1.414c.264.21.543.402.836.576l1.414-1.414a10.006 10.006 0 0 0 5.855-8.42V7.5A4.5 4.5 0 0 0 17.5 3Z" />
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                 </svg>
             </button>
-            <!-- いいね数 (Postエンティティから直接サイズを取得) -->
             <span class="like-count" th:id="'like-count-' + ${post.id}" th:text="${post.likes.size()}">0</span>
         </div>
+
         <!-- ▲▲▲ 【いいね！機能ここまで】 ▲▲▲ -->
 
 
