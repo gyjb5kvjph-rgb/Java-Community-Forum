@@ -54,7 +54,6 @@
 <hr sec:authorize="isAuthenticated()">
 
 <!-- --- ▼▼▼ 投稿ループの修正 ▼▼▼ --- -->
-<!-- ${posts} から ${postPage.content} に変更 (コントローラーから渡されたページの中身) -->
 <div th:each="post : ${postPage.content}" style="border-bottom: 1px solid #ccc; padding: 10px;">
     <h2 th:text="${post.title}">ここにタイトルが入る</h2>
     <p th:text="${post.content}">ここに本文が入る</p>
@@ -64,7 +63,8 @@
         <span th:if="${post.user != null}" th:text="${post.user.username}">ユーザー名</span>
         <span th:if="${post.user == null}">（不明）</span>
         |
-        <span th:text="${#temporals.format(post.createdAt, 'yyyy/MM/dd HH:mm')}">投稿日時</span>
+        <!-- タイムゾーンを'Asia/Tokyo'に指定 -->
+        <span th:text="${#temporals.format(post.createdAt, 'yyyy/MM/dd HH:mm', new java.util.Locale('ja', 'JP'), 'Asia/Tokyo')}">投稿日時</span>
     </small>
 
     <!-- ボタンの表示制御 (変更なし) -->
@@ -81,27 +81,25 @@
 
 
 <!-- --- ▼▼▼ ページネーションUIの追加 ▼▼▼ --- -->
-<!-- postPage.totalPages (総ページ数) が 1 より大きい場合のみ表示 -->
 <nav class="pagination" th:if="${postPage.totalPages > 1}">
 
     <!-- 「前へ」のリンク -->
-    <!-- th:classappend="${postPage.first}" : もし最初のページなら "disabled" クラスを追加 -->
     <a th:href="@{/(page=${postPage.number - 1}, size=${postPage.size})}"
        th:classappend="${postPage.first} ? 'disabled'"
        aria-label="Previous">
         <span>&laquo;</span> <!-- « (二重矢印) -->
     </a>
 
+    <!-- ★★★ 修正箇所：タグの内側からコメントを削除 ★★★ -->
     <!-- ページ番号のループ -->
-    <!-- th:each="pageNumber : ${pageNumbers}" : コントローラーから渡されたページ番号リストをループ -->
     <a th:each="pageNumber : ${pageNumbers}"
        th:href="@{/(page=${pageNumber}, size=${postPage.size})}"
-       th:text="${pageNumber + 1}" <!-- 0から始まるため +1 して表示 -->
-    th:classappend="${pageNumber == postPage.number} ? 'active'"> <!-- 現在のページなら "active" クラスを追加 -->
+       th:text="${pageNumber + 1}"
+       th:classappend="${pageNumber == postPage.number} ? 'active'">
     </a>
+    <!-- ★★★ 修正ここまで ★★★ -->
 
     <!-- 「次へ」のリンク -->
-    <!-- th:classappend="${postPage.last}" : もし最後のページなら "disabled" クラスを追加 -->
     <a th:href="@{/(page=${postPage.number + 1}, size=${postPage.size})}"
        th:classappend="${postPage.last} ? 'disabled'"
        aria-label="Next">
