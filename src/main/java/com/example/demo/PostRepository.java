@@ -12,31 +12,29 @@ import java.util.List;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
 
+    // --- 【ステップ2-Dで追加】 ---
+    // N+1問題を回避しつつ、ページネーションを実現するためのクエリ
+
     /**
-     * ページネーション（N+1問題対策）のためのクエリ
-     *
-     * ステップ1: まず、ページネーションを適用して「投稿のIDだけ」を取得します。
-     * (このクエリはDB側で正しくページングされます)
+     * 1. まず、ページング指定で「投稿のID」だけを取得する
+     * (作成日の降順)
      */
     @Query("SELECT p.id FROM Post p ORDER BY p.createdAt DESC")
     Page<Long> findPostIdsByOrderByCreatedAtDesc(Pageable pageable);
 
     /**
-     * ページネーション（N+1問題対策）のためのクエリ
-     *
-     * ステップ2: ステップ1で取得したIDのリスト（postIds）を使って、
-     * 必要な情報（Post, User, Likes）をすべてJOIN FETCHで一括取得します。
-     * (これにより、投稿ごとのユーザー情報や「いいね」のループクエリ（N+1）を防ぎます)
-     *
-     * @param postIds 取得対象の投稿IDのリスト
-     * @return 関連情報がフェッチされたPostのリスト
+     * 2. 取得したIDのリストに基づき、「いいね！」と「ユーザー」の情報を
+     * JOIN FETCH（一括取得）でまとめて取得する
      */
     @Query("SELECT p FROM Post p " +
-            "LEFT JOIN FETCH p.user " +        // 投稿者情報(User)をフェッチ
-            "LEFT JOIN FETCH p.likes l " +     // いいね情報(Like)をフェッチ
-            "LEFT JOIN FETCH l.user " +        // いいねしたユーザー情報もフェッチ
-            "WHERE p.id IN :postIds " +
-            "ORDER BY p.createdAt DESC")
-    List<Post> findAllPostsWithUserAndLikes(@Param("postIds") List<Long> postIds);
+            "LEFT JOIN FETCH p.user " +      // 投稿者(User)の情報を一括取得
+            "LEFT JOIN FETCH p.likes " +     // いいね(Likes)の情報を一括取得
+            "WHERE p.id IN :ids " +          // 1. で取得したIDリストに絞り込む
+            "ORDER BY p.createdAt DESC")     // 順序を保持
+    List<Post> findAllPostsWithUserAndLikes(@Param("ids") List<Long> ids);
+
+    // --- 【既存のメソッド】 ---
+    // (ページネーション機能で追加した、古いメソッド。PostControllerからは使われなくなる)
+    Page<Post> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }
 

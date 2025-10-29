@@ -1,8 +1,7 @@
 /* ページ全体の基本設定 */
 body {
     font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, sans-serif;
-    margin: 0; /* (マージンを0に変更) */
-    padding: 0; /* (パディングを0に変更) */
+    margin: 0; /* ページ全体の余白を削除 */
     background-color: #f4f4f4; /* 少し薄いグレーの背景色 */
     color: #333; /* 基本の文字色 */
 }
@@ -12,7 +11,16 @@ h1 {
     color: #005a9c; /* 濃い青色 */
     border-bottom: 2px solid #005a9c;
     padding-bottom: 10px;
-    margin-top: 0; /* (追加) */
+}
+
+/* 投稿一つひとつの囲い (div) */
+div[th\\:each] { /* Thymeleafの th:each が付いたdivを狙う指定 */
+    background-color: #ffffff; /* 白色の背景 */
+    border: 1px solid #ddd;
+    border-radius: 8px; /* 角を丸くする */
+    padding: 15px;
+    margin-bottom: 15px; /* 下の投稿との隙間 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* 薄い影をつける */
 }
 
 /* リンク (aタグ) のスタイル */
@@ -47,51 +55,57 @@ input[type="text"], textarea {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    font-size: 16px; /* (追加) */
-    font-family: inherit; /* (追加) */
+    font-size: 16px;
+}
+textarea {
+    width: 95%;
+    max-width: 500px;
 }
 
 /* ▼▼▼ 【いいね！ボタンのスタイルを追記】 ▼▼▼ */
 
+/* いいねボタンとカウントのコンテナ */
 .like-container {
     display: flex;
-    align-items: center; /* ボタンと数字を縦中央揃え */
-    gap: 6px; /* ボタンと数字の間の隙間 */
+    align-items: center;
     margin-top: 10px;
 }
 
+/* いいねボタン（ハートマーク） */
 .like-button {
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: 5px;
     display: flex;
     align-items: center;
-    color: #888; /* デフォルトの（いいね！してない）色 */
+    /* (ボタン自体の色はCSSで制御) */
+    color: #aaa; /* デフォルトの色（グレー） */
 }
 
+/* いいねボタン内のSVGアイコンのサイズ */
 .like-button .like-icon {
     width: 24px;
     height: 24px;
+    transition: color 0.2s ease, transform 0.2s ease; /* アニメーション */
 }
 
-/* いいね！が押された (likedクラスが付いた) 時のスタイル */
-.like-button.liked {
-    color: #e0245e; /* ハートを赤色にする */
+/* いいねボタンにマウスを乗せた時の色 */
+.like-button:hover .like-icon {
+    color: #e0245e; /* ホバー時に赤色に */
 }
 
-.like-button:hover {
-    color: #e0245e; /* ホバー時も赤色にする */
+/* 「いいね！」が押された状態 (.liked クラスが付いた時) のスタイル */
+.like-button.liked .like-icon {
+    color: #e0245e; /* 赤色 */
+    fill: #e0245e;   /* SVGの内側を塗りつぶす */
 }
 
-/* 認証されていない（ログインしていない）場合はボタンを非表示にする */
-.like-button:not([sec:authorize="isAuthenticated()"]) {
-    display: none;
-}
-
+/* いいね！の数 */
 .like-count {
+    margin-left: 5px;
     font-size: 16px;
     color: #555;
-    min-width: 20px; /* 数字が0でもレイアウトが崩れないように */
+    min-width: 20px; /* 数字が変動してもレイアウトが崩れないように */
 }
 

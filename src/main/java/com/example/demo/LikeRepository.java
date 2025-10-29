@@ -1,31 +1,39 @@
 package com.example.demo;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional; // ★ 1. import を追加
+import java.util.Optional;
+import java.util.Set; // ★ import を追加
 
 @Repository
+// ★ LikeId(複合主キー) を JpaRepository の2番目の型引数に指定
 public interface LikeRepository extends JpaRepository<Like, LikeId> {
 
-    // --- ▼▼▼ 【ステップ2-Bで追加】 ▼▼▼ ---
+    // --- LikeController で使用 ---
 
     /**
-     * 投稿ID(postId)とユーザーID(userId)を使って、
-     * 既に「いいね」が存在するかどうかを検索する
-     * @param postId 投稿ID
-     * @param userId ユーザーID
-     * @return Likeエンティティ（存在する場合）
+     * 投稿IDとユーザーIDに基づいて、特定の「いいね！」を検索する
+     * (メソッド命名規則により、Spring Data JPAが自動でSQLを生成)
      */
     Optional<Like> findByPostIdAndUserId(Long postId, Long userId);
 
     /**
-     * 投稿ID(postId)に紐づく「いいね」の総数をカウントする
-     * @param postId 投稿ID
-     * @return いいねの総数
+     * 特定の投稿IDに関連する「いいね！」の総数を数える
+     * (メソッド命名規則により、Spring Data JPAが自動でSQLを生成)
      */
     int countByPostId(Long postId);
 
-    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
+
+    // --- PostController (一覧表示) で使用 ---
+
+    /**
+     * 特定のユーザーIDが「いいね！」したすべての投稿IDのセットを取得する
+     * (これはJPQLクエリ)
+     */
+    @Query("SELECT l.id.postId FROM Like l WHERE l.id.userId = :userId")
+    Set<Long> findLikedPostIdsByUserId(@Param("userId") Long userId);
 }
 

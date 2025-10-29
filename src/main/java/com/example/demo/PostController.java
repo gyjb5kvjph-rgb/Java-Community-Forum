@@ -1,10 +1,11 @@
 package com.example.demo;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page; // ★ 1. Page をインポート
-import org.springframework.data.domain.PageRequest; // ★ 2. PageRequest をインポート
-import org.springframework.data.domain.Pageable; // ★ 3. Pageable をインポート
-import org.springframework.data.domain.Sort; // ★ 4. Sort をインポート
+import org.springframework.data.domain.Page; // ★ import
+import org.springframework.data.domain.PageImpl; // ★ import
+import org.springframework.data.domain.PageRequest; // ★ import
+import org.springframework.data.domain.Pageable; // ★ import
+import org.springframework.data.domain.Sort; // ★ import
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -13,13 +14,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam; // ★ 5. RequestParam をインポート
+import org.springframework.web.bind.annotation.RequestParam; // ★ import
 
-import java.util.List;
-import java.util.stream.Collectors; // ★ 6. Collectors をインポート
-import java.util.stream.IntStream; // ★ 7. IntStream をインポート
+import java.util.Collections; // ★ import
+import java.util.List; // ★ import
+import java.util.Set; // ★ import
+import java.util.stream.Collectors; // ★ import
 
-@Controller // Webのリクエストを受け取るクラス
+@Controller
 public class PostController {
 
     @Autowired
@@ -29,51 +31,61 @@ public class PostController {
     private UserRepository userRepository;
 
     @Autowired
-    private LikeRepository likeRepository; // ★ 8. LikeRepository をインポート
+    private LikeRepository likeRepository; // ★ LikeRepository をAutowired
 
     /**
-     * トップページ（投稿一覧） (★ ページネーション対応に大幅変更)
-     * http://localhost:8080/ でアクセスされる
-     * @param page 表示するページ番号 (デフォルトは0)
-     * @param size 1ページあたりの投稿数 (デフォルトは5)
+     * トップページ（投稿一覧） (★ N+1問題対策済みに変更)
+     * @param model ビューに渡すモデル
+     * @param page リクエストされたページ番号 (デフォルトは0)
+     * @return テンプレート名
      */
     @GetMapping("/")
-    public String index(Model model,
-                        @RequestParam(name = "page", defaultValue = "0") int page,
-                        @RequestParam(name = "size", defaultValue = "5") int size) {
+    public String index(Model model, @RequestParam(name = "page", defaultValue = "0") int page) {
 
-        // ★ 9. ページネーションのリクエストを作成 (作成日の降順 = 新しい順)
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        // 1. ページネーションの設定 (1ページあたり5件、作成日時の降順)
+        Pageable pageable = PageRequest.of(page, 5, Sort.by("createdAt").descending());
 
-        // ★ 10. 【ステップ2-Dで作成する】性能改善版のメソッドを呼び出す
-        Page<Post> postPage = postRepository.findAllPostsWithUserAndLikes(pageable);
+        // 2. ★ N+1対策: まずIDのリストだけをページネーションで取得
+        Page<Long> postIdsPage = postRepository.findPostIdsByOrderByCreatedAtDesc(pageable);
+        List<Long> postIds = postIdsPage.getContent();
 
-        // ★ 11. ページネーションのリンク番号リストを作成
-        int totalPages = postPage.getTotalPages();
-        if (totalPages > 0) {
-            List<Integer> pageNumbers = IntStream.rangeClosed(1, totalPages)
-                    .map(i -> i - 1) // 0-indexed に変換
-                    .boxed()
-                    .collect(Collectors.toList());
-            model.addAttribute("pageNumbers", pageNumbers);
+        List<Post> posts;
+        if (postIds.isEmpty()) {
+            posts = Collections.emptyList();
+        } else {
+            // 3. ★ N+1対策: IDのリストを使って、関連データ(User, Likes)をまとめて取得
+            posts = postRepository.findAllPostsWithUserAndLikes(postIds);
+
+            // 4. (重要) DBから取得したリストはID順になっているため、元のcreatedAt順（postIdsの順）に並び替える
+            posts.sort((p1, p2) -> Long.compare(postIds.indexOf(p1.getId()), postIds.indexOf(p2.getId())));
         }
 
-        // ★ 12. ログイン中のユーザーIDをモデルに追加（いいね状態の判定用）
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
-            User currentUser = userRepository.findByUsername(auth.getName()).orElse(null);
-            if (currentUser != null) {
-                model.addAttribute("currentUserId", currentUser.getId());
-            }
-        }
+        // 5. Page<Post> オブジェクトを再構築
+        Page<Post> postPage = new PageImpl<>(posts, pageable, postIdsPage.getTotalElements());
 
-        // ★ 13. Modelに "postPage" という名前で、取得したページ情報を渡す
         model.addAttribute("postPage", postPage);
-        return "list"; // "list.html" を表示
+
+        // 6. ログイン中のユーザーがいいねした投稿IDのセットを渡す
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !(auth.getPrincipal() instanceof String)) {
+            String username = auth.getName();
+            User currentUser = userRepository.findByUsername(username).orElse(null);
+            if (currentUser != null) {
+                Set<Long> likedPostIds = likeRepository.findLikedPostIdsByUserId(currentUser.getId());
+                model.addAttribute("currentUserLikePostIds", likedPostIds);
+            } else {
+                model.addAttribute("currentUserLikePostIds", Collections.emptySet());
+            }
+        } else {
+            model.addAttribute("currentUserLikePostIds", Collections.emptySet());
+        }
+
+        return "list"; // list.html を表示
     }
 
+
     /**
-     * 新規投稿フォーム (変更なし)
+     * 新規投稿フォーム
      */
     @GetMapping("/new")
     public String newPostForm(Model model) {
@@ -82,33 +94,40 @@ public class PostController {
     }
 
     /**
-     * 投稿処理 (変更なし・安全なコード)
+     * 投稿処理 (★ 安全なコードに修正済み)
+     * ログイン中のユーザー情報を取得し、投稿に紐づける
      */
     @PostMapping("/create")
     public String createPost(@ModelAttribute Post post) {
+        // 現在ログイン中のユーザー名を取得
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
+        // ユーザー名を使って、データベースから User オブジェクトを取得
         User currentUser = userRepository.findByUsername(username)
                 .orElse(null); // orElseThrow の代わりに orElse(null) を使う
 
+        // もしDBにユーザーがいなければ (セッションだけ残っている場合)
         if (currentUser == null) {
-            // DBにユーザーがいなければ (セッションだけ残っている場合)
+            // ログアウトさせてセッションをクリアし、ログインページに戻す
             return "redirect:/logout";
         }
 
+        // 投稿(Post)に、見つけたユーザー(User)をセットする
         post.setUser(currentUser);
+
         postRepository.save(post);
         return "redirect:/";
     }
 
     /**
-     * 編集フォームの表示 (変更なし・安全なコード)
+     * 編集フォームの表示 (★ 安全なコードに修正済み)
      */
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
         Post post = postRepository.findById(id).orElse(null);
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
 
+        // (修正) post.getUser() != null のチェックを追加
         if (post == null || post.getUser() == null || !post.getUser().getUsername().equals(currentUsername)) {
             return "redirect:/";
         }
@@ -118,13 +137,14 @@ public class PostController {
     }
 
     /**
-     * 更新処理 (変更なし・安全なコード)
+     * 更新処理 (★ 安全なコードに修正済み)
      */
     @PostMapping("/update")
     public String updatePost(@ModelAttribute Post post) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         Post existingPost = postRepository.findById(post.getId()).orElse(null);
 
+        // (修正) existingPost.getUser() != null のチェックを追加
         if (existingPost != null && existingPost.getUser() != null && existingPost.getUser().getUsername().equals(currentUsername)) {
             existingPost.setTitle(post.getTitle());
             existingPost.setContent(post.getContent());
@@ -135,13 +155,14 @@ public class PostController {
     }
 
     /**
-     * 削除処理 (変更なし・安全なコード)
+     * 削除処理 (★ 安全なコードに修正済み)
      */
     @GetMapping("/delete/{id}")
     public String deletePost(@PathVariable Long id) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         Post post = postRepository.findById(id).orElse(null);
 
+        // (修正) post.getUser() != null のチェックを追加
         if (post != null && post.getUser() != null && post.getUser().getUsername().equals(currentUsername)) {
             postRepository.deleteById(id);
         }
