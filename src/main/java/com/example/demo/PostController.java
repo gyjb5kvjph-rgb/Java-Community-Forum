@@ -1,7 +1,9 @@
 package com.example.demo;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,8 +11,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam; // ★ importが追加されます
 
 import java.util.List;
+import java.util.stream.Collectors; // ★ importが追加されます
+import java.util.stream.IntStream; // ★ importが追加されます
 
 @Controller
 public class PostController {
@@ -19,20 +24,47 @@ public class PostController {
     private PostRepository postRepository;
 
     @Autowired
-    private UserRepository userRepository; // これがあることを確認
+    private UserRepository userRepository;
 
     /**
-     * トップページ（投稿一覧）
+     * トップページ（投稿一覧） (★ ページネーション対応に修正)
+     *
+     * @param model Spring MVCのモデル
+     * @param page  現在のページ番号 (デフォルトは0から開始)
+     * @param size  1ページあたりの表示件数 (デフォルトは5件)
+     * @return テンプレート名
      */
     @GetMapping("/")
-    public String index(Model model) {
-        List<Post> posts = postRepository.findAll();
-        model.addAttribute("posts", posts);
-        return "list";
+    public String index(Model model,
+                        @RequestParam(name = "page", defaultValue = "0") int page,
+                        @RequestParam(name = "size", defaultValue = "5") int size) { // 1ページの件数を5件に設定
+
+        // ページネーションのリクエスト情報を作成 (現在のページ, 1ページの件数)
+        Pageable pageable = PageRequest.of(page, size);
+
+        // データベースから新しい順で、指定されたページ（例: 0ページ目の5件）だけを取得
+        Page<Post> postPage = postRepository.findAllByOrderByCreatedAtDesc(pageable);
+
+        // 取得したページオブジェクトをHTML（Thymeleaf）に渡す
+        model.addAttribute("postPage", postPage);
+
+        // --- ページネーションの番号（1, 2, 3...）を生成するための処理 ---
+        int totalPages = postPage.getTotalPages();
+        if (totalPages > 0) {
+            // 0から始まるページ番号のリストを作成 (例: 5ページなら 0, 1, 2, 3, 4)
+            List<Integer> pageNumbers = IntStream.rangeClosed(0, totalPages - 1)
+                    .boxed()
+                    .collect(Collectors.toList());
+            // ページ番号のリストをHTMLに渡す
+            model.addAttribute("pageNumbers", pageNumbers);
+        }
+        // --- ここまで ---
+
+        return "list"; // list.html を表示
     }
 
     /**
-     * 新規投稿フォーム
+     * 新規投稿フォーム (変更なし)
      */
     @GetMapping("/new")
     public String newPostForm(Model model) {
@@ -41,40 +73,30 @@ public class PostController {
     }
 
     /**
-     * 投稿処理 (★ 安全なコードに修正済み)
-     * ログイン中のユーザー情報を取得し、投稿に紐づける
+     * 投稿処理 (変更なし - 以前の安全なコードのまま)
      */
     @PostMapping("/create")
     public String createPost(@ModelAttribute Post post) {
-        // 現在ログイン中のユーザー名を取得
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userRepository.findByUsername(username).orElse(null);
 
-        // ユーザー名を使って、データベースから User オブジェクトを取得
-        User currentUser = userRepository.findByUsername(username)
-                .orElse(null); // orElseThrow の代わりに orElse(null) を使う
-
-        // もしDBにユーザーがいなければ (セッションだけ残っている場合)
         if (currentUser == null) {
-            // ログアウトさせてセッションをクリアし、ログインページに戻す
-            return "redirect:/logout";
+            return "redirect:/logout"; // DBにユーザーがいない場合
         }
 
-        // 投稿(Post)に、見つけたユーザー(User)をセットする
         post.setUser(currentUser);
-
         postRepository.save(post);
         return "redirect:/";
     }
 
     /**
-     * 編集フォームの表示 (★ 安全なコードに修正済み)
+     * 編集フォームの表示 (変更なし - 以前の安全なコードのまま)
      */
     @GetMapping("/edit/{id}")
     public String showEditForm(@PathVariable Long id, Model model) {
         Post post = postRepository.findById(id).orElse(null);
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        // (修正) post.getUser() != null のチェックを追加
         if (post == null || post.getUser() == null || !post.getUser().getUsername().equals(currentUsername)) {
             return "redirect:/";
         }
@@ -84,14 +106,13 @@ public class PostController {
     }
 
     /**
-     * 更新処理 (★ 安全なコードに修正済み)
+     * 更新処理 (変更なし - 以前の安全なコードのまま)
      */
     @PostMapping("/update")
     public String updatePost(@ModelAttribute Post post) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         Post existingPost = postRepository.findById(post.getId()).orElse(null);
 
-        // (修正) existingPost.getUser() != null のチェックを追加
         if (existingPost != null && existingPost.getUser() != null && existingPost.getUser().getUsername().equals(currentUsername)) {
             existingPost.setTitle(post.getTitle());
             existingPost.setContent(post.getContent());
@@ -102,14 +123,13 @@ public class PostController {
     }
 
     /**
-     * 削除処理 (★ 安全なコードに修正済み)
+     * 削除処理 (変更なし - 以前の安全なコードのまま)
      */
     @GetMapping("/delete/{id}")
     public String deletePost(@PathVariable Long id) {
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         Post post = postRepository.findById(id).orElse(null);
 
-        // (修正) post.getUser() != null のチェックを追加
         if (post != null && post.getUser() != null && post.getUser().getUsername().equals(currentUsername)) {
             postRepository.deleteById(id);
         }
@@ -117,3 +137,4 @@ public class PostController {
         return "redirect:/";
     }
 }
+

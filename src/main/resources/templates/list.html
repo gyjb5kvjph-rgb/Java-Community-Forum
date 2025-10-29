@@ -1,9 +1,39 @@
 <!DOCTYPE html>
+<!-- ★ xmlns:sec を sec:authorize のために追加 -->
 <html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
 <head>
     <meta charset="UTF-8">
     <title>簡易掲示板</title>
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css"> <!-- CSSを読み込み -->
+
+    <!-- ★ ページネーション用の簡単なスタイルを追加 -->
+    <style>
+        .pagination {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        .pagination a, .pagination span {
+            padding: 8px 12px;
+            margin: 0 4px;
+            border: 1px solid #ddd;
+            text-decoration: none;
+            color: #007bff;
+            border-radius: 4px;
+        }
+        /* 現在のページを示すスタイル */
+        .pagination .active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        /* 最初/最後のページでリンクを無効化するスタイル */
+        .pagination .disabled {
+            color: #ccc;
+            border-color: #ddd;
+            pointer-events: none; /* クリックを無効化 */
+        }
+    </style>
 </head>
 <body>
 <!-- ログイン/ログアウト表示 (変更なし) -->
@@ -20,16 +50,15 @@
 </div>
 
 <h1>投稿一覧</h1>
-<!-- ログインしている時だけ「新規投稿」リンクを表示 (変更なし) -->
 <a href="/new" sec:authorize="isAuthenticated()">新規投稿はこちら</a>
 <hr sec:authorize="isAuthenticated()">
 
-
-<div th:each="post : ${posts}" style="border-bottom: 1px solid #ccc; padding: 10px;">
+<!-- --- ▼▼▼ 投稿ループの修正 ▼▼▼ --- -->
+<!-- ${posts} から ${postPage.content} に変更 (コントローラーから渡されたページの中身) -->
+<div th:each="post : ${postPage.content}" style="border-bottom: 1px solid #ccc; padding: 10px;">
     <h2 th:text="${post.title}">ここにタイトルが入る</h2>
     <p th:text="${post.content}">ここに本文が入る</p>
 
-    <!-- 投稿者名と日時の表示 (変更なし) -->
     <small>
         <strong>投稿者: </strong>
         <span th:if="${post.user != null}" th:text="${post.user.username}">ユーザー名</span>
@@ -38,26 +67,49 @@
         <span th:text="${#temporals.format(post.createdAt, 'yyyy/MM/dd HH:mm')}">投稿日時</span>
     </small>
 
-
-    <!-- ▼▼▼ ここが修正箇所 ▼▼▼ -->
-    <!--
-     (修正) sec:authorize と th:if を分離します
-     1. sec:authorize で「ログインしているか」をまずチェック
-     2. th:if で「投稿者とログインユーザーが一致するか」をチェック
-        (Thymeleafの #authentication オブジェクトを使います)
-    -->
+    <!-- ボタンの表示制御 (変更なし) -->
     <div style="margin-top: 10px;"
          sec:authorize="isAuthenticated()"
          th:if="${post.user != null and #authentication.name == post.user.username}">
 
         <a th:href="@{/edit/{id}(id=${post.id})}">編集</a>
-
         <a th:href="@{/delete/{id}(id=${post.id})}"
            style="margin-left: 10px; color: red;">削除</a>
     </div>
-    <!-- ▲▲▲ ここまで ▲▲▲ -->
-
 </div>
+<!-- --- ▲▲▲ 投稿ループここまで ▲▲▲ --- -->
+
+
+<!-- --- ▼▼▼ ページネーションUIの追加 ▼▼▼ --- -->
+<!-- postPage.totalPages (総ページ数) が 1 より大きい場合のみ表示 -->
+<nav class="pagination" th:if="${postPage.totalPages > 1}">
+
+    <!-- 「前へ」のリンク -->
+    <!-- th:classappend="${postPage.first}" : もし最初のページなら "disabled" クラスを追加 -->
+    <a th:href="@{/(page=${postPage.number - 1}, size=${postPage.size})}"
+       th:classappend="${postPage.first} ? 'disabled'"
+       aria-label="Previous">
+        <span>&laquo;</span> <!-- « (二重矢印) -->
+    </a>
+
+    <!-- ページ番号のループ -->
+    <!-- th:each="pageNumber : ${pageNumbers}" : コントローラーから渡されたページ番号リストをループ -->
+    <a th:each="pageNumber : ${pageNumbers}"
+       th:href="@{/(page=${pageNumber}, size=${postPage.size})}"
+       th:text="${pageNumber + 1}" <!-- 0から始まるため +1 して表示 -->
+    th:classappend="${pageNumber == postPage.number} ? 'active'"> <!-- 現在のページなら "active" クラスを追加 -->
+    </a>
+
+    <!-- 「次へ」のリンク -->
+    <!-- th:classappend="${postPage.last}" : もし最後のページなら "disabled" クラスを追加 -->
+    <a th:href="@{/(page=${postPage.number + 1}, size=${postPage.size})}"
+       th:classappend="${postPage.last} ? 'disabled'"
+       aria-label="Next">
+        <span>&raquo;</span> <!-- » (二重矢印) -->
+    </a>
+</nav>
+<!-- --- ▲▲▲ ページネーションここまで ▲▲▲ --- -->
 
 </body>
 </html>
+
