@@ -70,8 +70,8 @@
                     <path d="M17.5 3A4.5 4.5 0 0 0 13 7.5v4.086c0 1.343.303 2.628.855 3.821l-1.414 1.414c.264.21.543.402.836.576l1.414-1.414a10.006 10.006 0 0 0 5.855-8.42V7.5A4.5 4.5 0 0 0 17.5 3Z" />
                 </svg>
             </button>
-            <!-- いいね数 (Postエンティティから直接サイズを取得) -->
-            <span class="like-count" th:id="'like-count-' + ${post.id}" th:text="${post.likes.size()}">0</span>
+            <!-- いいね数 (Postエンティティから直接サイズを取得, nullチェック追加) -->
+            <span class="like-count" th:id="'like-count-' + ${post.id}" th:text="${post.likes != null ? post.likes.size() : 0}">0</span>
         </div>
         <!-- ▲▲▲ 【いいね！機能ここまで】 ▲▲▲ -->
 
@@ -157,8 +157,8 @@
             const csrfHeader = this.dataset.csrfHeader;
 
             // APIのURL
-            // (LikeControllerの @PostMapping("/toggle-like/{postId}") に合わせる)
-            const url = `/api/toggle-like/${postId}`;
+            // (LikeControllerの @RequestMapping("/api/posts") と @PostMapping("/toggle-like/{postId}") に合わせる)
+            const url = `/api/posts/toggle-like/${postId}`; // ★★★ ここを修正 ★★★
 
             // JavaScriptの fetch API を使ってサーバーにPOSTリクエストを送信
             fetch(url, {
