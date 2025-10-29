@@ -1,43 +1,35 @@
-package com.example.demo; // 修正箇所
+package com.example.demo;
 
-// ▼▼▼ これら import が必要です ▼▼▼
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;   // ★ これ
-import jakarta.persistence.JoinColumn; // ★ これ
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
-// ▲▲▲ ここまで ▲▲▲
+import java.util.Set; // ★ 1. Set をインポート
 
-@Entity // これがデータベースのテーブルになる印
+@Entity
+@Table(name = "posts") // "post" は予約語の可能性があるため "posts" とします
 public class Post {
 
-    @Id // 主キー（識別ID）
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // IDを自動で連番にする
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String title; // 記事のタイトル
-    private String content; // 記事の本文
-    private LocalDateTime createdAt; // 投稿日時
-// --- ▼▼▼ ここから下を追加 ▼▼▼ ---
+    private String title;
+    private String content;
+    private LocalDateTime createdAt;
 
-    @ManyToOne // 投稿(Many) 対 ユーザー(One) の関係
-    @JoinColumn(name = "user_id") // データベース上では "user_id" というカラム名で紐づく
-    private User user; // この投稿の所有者
+    @ManyToOne(fetch = FetchType.LAZY) // ユーザー情報は必要な時だけ取得
+    @JoinColumn(name = "user_id")
+    private User user;
 
-    // user のゲッターとセッター
-    public User getUser() {
-        return user;
-    }
+    // --- ▼▼▼ ここから2行を追加 ▼▼▼ ---
+    // この投稿(One)は、たくさんの「いいね(Many)」を持つ
+    // cascade = CascadeType.ALL: 投稿が削除されたら、関連する「いいね」もすべて削除する
+    // orphanRemoval = true: リストから「いいね」を外したら、DBからも削除する
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<Like> likes;
+    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
-    public void setUser(User user) {
-        this.user = user;
-    }
 
-    // --- ゲッターとセッター ---
-    // (IntelliJの Alt + Insert キー (Windows) や Command + N (Mac) の
-    //  "Getter and Setter" メニューを使うと自動生成できます)
+    // --- ゲッターとセッター (user, title, content, createdAt は既存) ---
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -47,10 +39,22 @@ public class Post {
     public void setContent(String content) { this.content = content; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
-    // 投稿日時を自動セットする
-    @jakarta.persistence.PrePersist
+    @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
     }
+
+    // --- ▼▼▼ likes のゲッターとセッターを追加 ▼▼▼ ---
+    public Set<Like> getLikes() {
+        return likes;
+    }
+
+    public void setLikes(Set<Like> likes) {
+        this.likes = likes;
+    }
+    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 }
+

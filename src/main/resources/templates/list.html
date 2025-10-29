@@ -1,39 +1,11 @@
 <!DOCTYPE html>
-<!-- ★ xmlns:sec を sec:authorize のために追加 -->
+<!-- ★ 1. sec (Spring Security) と xmlns:th="http://www.thymeleaf.org" を追加 -->
 <html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
 <head>
     <meta charset="UTF-8">
     <title>簡易掲示板</title>
-    <link rel="stylesheet" href="/css/style.css"> <!-- CSSを読み込み -->
-
-    <!-- ★ ページネーション用の簡単なスタイルを追加 -->
-    <style>
-        .pagination {
-            display: flex;
-            justify-content: center;
-            padding: 20px 0;
-        }
-        .pagination a, .pagination span {
-            padding: 8px 12px;
-            margin: 0 4px;
-            border: 1px solid #ddd;
-            text-decoration: none;
-            color: #007bff;
-            border-radius: 4px;
-        }
-        /* 現在のページを示すスタイル */
-        .pagination .active {
-            background-color: #007bff;
-            color: white;
-            border-color: #007bff;
-        }
-        /* 最初/最後のページでリンクを無効化するスタイル */
-        .pagination .disabled {
-            color: #ccc;
-            border-color: #ddd;
-            pointer-events: none; /* クリックを無効化 */
-        }
-    </style>
+    <!-- ★ 2. 既存のCSSを読み込む -->
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <!-- ログイン/ログアウト表示 (変更なし) -->
@@ -41,7 +13,7 @@
     <div sec:authorize="isAuthenticated()">
         こんにちは, <strong sec:authentication="name"></strong> さん |
         <form th:action="@{/logout}" method="post" style="display: inline;">
-            <button type="submit" style="background: none; border: none; color: #007bff; cursor: pointer; padding: 0;">ログアウト</button>
+            <button type-="submit" class="logout-button">ログアウト</button>
         </form>
     </div>
     <div sec:authorize="isAnonymous()">
@@ -53,60 +25,129 @@
 <a href="/new" sec:authorize="isAuthenticated()">新規投稿はこちら</a>
 <hr sec:authorize="isAuthenticated()">
 
-<!-- --- ▼▼▼ 投稿ループの修正 ▼▼▼ --- -->
-<div th:each="post : ${postPage.content}" style="border-bottom: 1px solid #ccc; padding: 10px;">
+
+<!-- ★ 3. ループ対象を ${postPage.content} に変更 -->
+<div th:each="post : ${postPage.content}" class="post-entry">
     <h2 th:text="${post.title}">ここにタイトルが入る</h2>
     <p th:text="${post.content}">ここに本文が入る</p>
 
     <small>
         <strong>投稿者: </strong>
+        <!-- ★ 4. post.user.username で投稿者名を表示 -->
         <span th:if="${post.user != null}" th:text="${post.user.username}">ユーザー名</span>
         <span th:if="${post.user == null}">（不明）</span>
         |
-        <!-- タイムゾーンを'Asia/Tokyo'に指定 -->
-        <span th:text="${#temporals.format(post.createdAt, 'yyyy/MM/dd HH:mm', new java.util.Locale('ja', 'JP'), 'Asia/Tokyo')}">投稿日時</span>
+        <!-- ★ 5. 時刻をJST（日本時間）に変換して表示 -->
+        <span th:text="${#temporals.format(post.createdAt.atZone(T(java.time.ZoneId).of('UTC')).withZoneSameInstant(T(java.time.ZoneId).of('Asia/Tokyo')), 'yyyy/MM/dd HH:mm')}">投稿日時</span>
     </small>
 
-    <!-- ボタンの表示制御 (変更なし) -->
+    <!-- ▼▼▼ 【ステップ3-Aで追加】いいね！ボタンとカウント ▼▼▼ -->
+    <div class="like-section" sec:authorize="isAuthenticated()">
+        <!--
+            JavaScriptから操作するために、IDとカスタム属性(data-*) を設定
+            - id : `like-btn-${post.id}` (投稿ごとに一意のID)
+            - data-post-id : 投稿ID
+            - th:class (userLiked) : ログイン中のユーザーがいいね済みかどうかに応じて "liked" クラスを付与
+        -->
+        <button th:id="'like-btn-' + ${post.id}"
+                class="like-button"
+                th:classappend="${#lists.contains(post.likes.![user.id], currentUserId)} ? 'liked'"
+                th:data-post-id="${post.id}"
+                onclick="toggleLike(this)">
+            <!-- ハートマーク (CSSで描画) -->
+            <span class="heart"></span>
+        </button>
+
+        <!--
+            いいね数を表示するSPAN
+            - id : `like-count-${post.id}` (投稿ごとに一意のID)
+        -->
+        <span th:id="'like-count-' + ${post.id}" th:text="${post.likes.size()}">0</span>
+    </div>
+    <!-- ▲▲▲ ここまで ▲▲▲ -->
+
+
+    <!-- 編集/削除ボタン (変更なし・th:if で本人確認) -->
     <div style="margin-top: 10px;"
          sec:authorize="isAuthenticated()"
          th:if="${post.user != null and #authentication.name == post.user.username}">
 
         <a th:href="@{/edit/{id}(id=${post.id})}">編集</a>
+
         <a th:href="@{/delete/{id}(id=${post.id})}"
            style="margin-left: 10px; color: red;">削除</a>
     </div>
+
 </div>
-<!-- --- ▲▲▲ 投稿ループここまで ▲▲▲ --- -->
 
+<!-- ページネーションUI (変更なし) -->
+<nav aria-label="Page navigation" th:if="${postPage.totalPages > 1}">
+    <ul class="pagination">
+        <!-- 前へ -->
+        <li class="page-item" th:classappend="${postPage.first} ? 'disabled'">
+            <a class="page-link" th:href="@{/(page=${postPage.number - 1}, size=${postPage.size})}">&laquo;</a>
+        </li>
 
-<!-- --- ▼▼▼ ページネーションUIの追加 ▼▼▼ --- -->
-<nav class="pagination" th:if="${postPage.totalPages > 1}">
+        <!-- ページ番号 -->
+        <li class="page-item" th:each="pageNumber : ${pageNumbers}" th:classappend="${pageNumber == postPage.number} ? 'active'">
+            <a class="page-link" th:href="@{/(page=${pageNumber}, size=${postPage.size})}" th:text="${pageNumber + 1}">1</a>
+        </li>
 
-    <!-- 「前へ」のリンク -->
-    <a th:href="@{/(page=${postPage.number - 1}, size=${postPage.size})}"
-       th:classappend="${postPage.first} ? 'disabled'"
-       aria-label="Previous">
-        <span>&laquo;</span> <!-- « (二重矢印) -->
-    </a>
-
-    <!-- ★★★ 修正箇所：タグの内側からコメントを削除 ★★★ -->
-    <!-- ページ番号のループ -->
-    <a th:each="pageNumber : ${pageNumbers}"
-       th:href="@{/(page=${pageNumber}, size=${postPage.size})}"
-       th:text="${pageNumber + 1}"
-       th:classappend="${pageNumber == postPage.number} ? 'active'">
-    </a>
-    <!-- ★★★ 修正ここまで ★★★ -->
-
-    <!-- 「次へ」のリンク -->
-    <a th:href="@{/(page=${postPage.number + 1}, size=${postPage.size})}"
-       th:classappend="${postPage.last} ? 'disabled'"
-       aria-label="Next">
-        <span>&raquo;</span> <!-- » (二重矢印) -->
-    </a>
+        <!-- 次へ -->
+        <li class="page-item" th:classappend="${postPage.last} ? 'disabled'">
+            <a class="page-link" th:href="@{/(page=${postPage.number + 1}, size=${postPage.size})}">&raquo;</a>
+        </li>
+    </ul>
 </nav>
-<!-- --- ▲▲▲ ページネーションここまで ▲▲▲ --- -->
+
+
+<!-- ▼▼▼ 【ステップ3-Aで追加】JavaScript (いいね！処理) ▼▼▼ -->
+<script sec:authorize="isAuthenticated()">
+    /*
+     * 「いいね！」ボタンがクリックされたときに実行される関数
+     */
+    async function toggleLike(buttonElement) {
+        const postId = buttonElement.getAttribute('data-post-id');
+        // CSRFトークンを <meta> タグから取得 (Spring Securityに必須)
+        const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const csrfHeaderName = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+        try {
+            // REST API (/api/posts/{postId}/toggle-like) を呼び出す
+            const response = await fetch(`/api/posts/${postId}/toggle-like`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeaderName]: csrfToken // CSRFヘッダーを付与
+                },
+            });
+
+            if (response.ok) {
+                // 成功した場合、JSONで返された最新のいいね！数を取得
+                const data = await response.json();
+
+                // 画面のいいね！数を更新
+                document.getElementById(`like-count-${postId}`).innerText = data.likeCount;
+
+                // ユーザーがいいねしたかどうかに応じて、ボタンの "liked" (赤色) クラスを切り替える
+                if (data.userLiked) {
+                    buttonElement.classList.add('liked');
+                } else {
+                    buttonElement.classList.remove('liked');
+                }
+
+            } else {
+                // エラー処理 (例: ログインセッションが切れた場合など)
+                console.error('いいね！処理に失敗しました。', await response.text());
+                alert('エラーが発生しました。ページを再読み込みしてください。');
+            }
+        } catch (error) {
+            console.error('通信エラー:', error);
+            alert('通信エラーが発生しました。');
+        }
+    }
+</script>
+<!-- ▲▲▲ ここまで ▲▲▲ -->
 
 </body>
 </html>

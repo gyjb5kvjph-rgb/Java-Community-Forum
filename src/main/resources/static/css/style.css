@@ -2,57 +2,186 @@
 body {
     font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, sans-serif;
     margin: 20px;
-    background-color: #f4f4f4; /* 少し薄いグレーの背景色 */
-    color: #333; /* 基本の文字色 */
+    padding: 20px;
+    background-color: #f8f9fa; /* 背景を白に近いグレーに */
+    color: #333;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-/* h1 (大見出し) のスタイル */
 h1 {
-    color: #005a9c; /* 濃い青色 */
+    color: #005a9c;
     border-bottom: 2px solid #005a9c;
     padding-bottom: 10px;
 }
 
 /* 投稿一つひとつの囲い (div) */
-div[th\\:each] { /* Thymeleafの th:each が付いたdivを狙うトリッキーな指定 */
-    background-color: #ffffff; /* 白色の背景 */
+.post-entry { /* 汎用的なクラス名に変更 */
+    background-color: #ffffff;
     border: 1px solid #ddd;
-    border-radius: 8px; /* 角を丸くする */
-    padding: 15px;
-    margin-bottom: 15px; /* 下の投稿との隙間 */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 薄い影をつける */
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 /* リンク (aタグ) のスタイル */
 a {
     color: #007bff;
-    text-decoration: none; /* 下線を消す */
+    text-decoration: none;
 }
 
 a:hover {
-    text-decoration: underline; /* マウスを乗せたら下線を出す */
+    text-decoration: underline;
 }
 
-/* ボタン (submit) のスタイル */
+/* ログアウトボタンをリンク風に */
+.logout-button {
+    background: none;
+    border: none;
+    color: #007bff;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+}
+.logout-button:hover {
+    text-decoration: underline;
+}
+
+/* フォームのスタイル */
+input[type="text"], textarea {
+    width: 100%;
+    max-width: 500px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box; /* paddingを含めて幅を計算 */
+}
+
+textarea {
+    min-height: 150px;
+}
+
 button[type="submit"] {
-    background-color: #007bff; /* 青色 */
+    background-color: #007bff;
     color: white;
     border: none;
-    padding: 10px 15px;
+    padding: 12px 20px;
     border-radius: 5px;
-    cursor: pointer; /* マウスカーソルを指の形にする */
+    cursor: pointer;
     font-size: 16px;
+    transition: background-color 0.2s;
 }
 
 button[type="submit"]:hover {
-    background-color: #0056b3; /* マウスを乗せたら少し濃い青に */
+    background-color: #0056b3;
 }
 
-/* フォームの入力欄 */
-input[type="text"], textarea {
-    width: 90%;
-    max-width: 500px; /* 横幅が広くなりすぎないように */
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+/* ページネーションのスタイル */
+.pagination {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    padding-left: 0;
 }
+.page-item {
+    margin: 0 5px;
+}
+.page-item.active .page-link {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+.page-item.disabled .page-link {
+    color: #6c757d;
+    pointer-events: none;
+    background-color: #fff;
+    border-color: #dee2e6;
+}
+.page-link {
+    display: block;
+    padding: .5rem .75rem;
+    line-height: 1.25;
+    color: #007bff;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: .25rem;
+}
+.page-link:hover {
+    color: #0056b3;
+    text-decoration: none;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+}
+
+
+/* ▼▼▼ 【いいね！ボタンのスタイルを追記】 ▼▼▼ */
+.like-section {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* ボタンと数字の間隔 */
+}
+
+.like-button {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    border-radius: 50%; /* 円形 */
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.like-button .heart {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    background-color: #aaa; /* デフォルトのハートの色 (グレー) */
+    position: relative;
+    transform: rotate(-45deg);
+    transition: background-color 0.2s;
+}
+
+.like-button .heart::before,
+.like-button .heart::after {
+    content: "";
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background-color: #aaa; /* デフォルトのハートの色 (グレー) */
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.like-button .heart::before {
+    top: -7px;
+    left: 0;
+}
+
+.like-button .heart::after {
+    top: 0;
+    left: 7px;
+}
+
+/* いいね！が押された時のスタイル ( .liked クラスが付与された時) */
+.like-button.liked {
+    border-color: #e0245e; /* 枠の色を赤に */
+}
+
+.like-button.liked .heart,
+.like-button.liked .heart::before,
+.like-button.liked .heart::after {
+    background-color: #e0245e; /* ハートの色を赤に */
+}
+
+/* ホバー時の拡大効果 */
+.like-button:hover {
+    transform: scale(1.1);
+}
+
