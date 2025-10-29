@@ -2,54 +2,53 @@ package com.example.demo;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // ★ 1. HttpMethod をインポート
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+// import org.springframework.security.web.util.matcher.AntPathRequestMatcher; // ★ 不要になったため削除
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
-    /**
-     * パスワードを暗号化するための Bean (部品)
-     * BCrypt という強力な暗号化方式を使います
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    /**
-     * セキュリティ設定 (URLごとのアクセス制御)
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        // ルート("/")、"/css/**"、"/register" は誰でもアクセス可能
-                        .requestMatchers("/", "/css/**", "/register", "/actuator/health").permitAll()
-                        // "/new", "/edit/**", "/delete/**" は認証されたユーザー (ログインした人) のみアクセス可能
-                        .requestMatchers("/new", "/edit/**", "/delete/**", "/create", "/update").authenticated()
-                        // その他のリクエストはすべて許可 (今回は上記以外は特にないが念のため)
-                        .anyRequest().permitAll()
+                        // ★ 2. CSSとJSファイルへのアクセスを全員に許可 (GETリクエスト)
+                        .requestMatchers(HttpMethod.GET, "/css/**", "/js/**").permitAll()
+                        // ★ 3. 「いいね！」API (POSTリクエスト) へのアクセスを認証済みのユーザーに許可
+                        .requestMatchers(HttpMethod.POST, "/api/posts/**").authenticated()
+                        // 「/register」（新規登録）と「/login」（ログイン）、「/」（一覧）ページは全員アクセス許可
+                        .requestMatchers("/", "/register", "/login").permitAll()
+                        // その他のリクエストはすべて認証が必要
+                        .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        // ログインフォームのURLを指定
+                        // ログインページのURLを指定
                         .loginPage("/login")
-                        // ログイン成功時のリダイレクト先 (デフォルトはトップページ "/")
+                        // ログイン成功時のリダイレクト先
                         .defaultSuccessUrl("/", true)
-                        // 誰でもログインページにはアクセス可能
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        // ログアウト処理のURL (デフォルトは /logout)
+                        // ログアウト処理のURLを指定 (非推奨の AntPathRequestMatcher を .logoutUrl に変更)
+                        .logoutUrl("/logout")
                         // ログアウト成功時のリダイレクト先
-                        .logoutSuccessUrl("/")
+                        .logoutSuccessUrl("/login?logout")
                         .permitAll()
                 );
 
         return http.build();
     }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // パスワードをハッシュ化するためのエンコーダー
+        return new BCryptPasswordEncoder();
+    }
 }
+
