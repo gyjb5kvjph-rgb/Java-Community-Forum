@@ -30,13 +30,11 @@
     <hr sec:authorize="isAuthenticated()">
 
     <!-- 投稿一覧 -->
-    <!-- (th:each を postPage.content に変更) -->
     <div th:each="post : ${postPage.content}" style="border-bottom: 1px solid #ccc; padding: 15px 0;">
 
         <!-- (投稿者名と日時の表示) -->
         <small style="color: #555;">
             <strong>投稿者: </strong>
-            <!-- (ユーザーが存在する場合のみ名前を表示) -->
             <span th:if="${post.user != null}" th:text="${post.user.username}">ユーザー名</span>
             <span th:if="${post.user == null}">（不明）</span>
             |
@@ -46,16 +44,14 @@
 
         <!-- (タイトルと内容) -->
         <h2 th:text="${post.title}" style="margin-top: 5px; margin-bottom: 10px;">ここにタイトルが入る</h2>
-        <!-- (th:utext を使って改行をHTMLに反映) -->
-        <p th:utext="${#strings.replace(post.content, T(java.lang.System).getProperty('line.separator'), '<br />')}" style="margin-bottom: 15px;">ここに本文が入る</p>
+
+        <!-- ▼▼▼ 【ここを修正 (T(java.lang.System)... を '\n' に変更)】 ▼▼▼ -->
+        <p th:utext="${#strings.replace(post.content, '\n', '<br />')}" style="margin-bottom: 15px;">ここに本文が入る</p>
+        <!-- ▲▲▲ 【修正ここまで】 ▲▲▲ -->
 
 
         <!-- ▼▼▼ 【いいね！機能のUIを追加】 ▼▼▼ -->
         <div class="like-container">
-            <!--
-                1. JavaScriptから操作するために、ボタンと数字にIDを付与 (例: like-btn-1, like-count-1)
-                2. th:data-* 属性を使って、JavaScriptが必要とする情報（投稿ID、CSRFトークン、いいね済みか）をHTMLに埋め込む
-            -->
             <button class="like-button"
                     th:id="'like-btn-' + ${post.id}"
                     th:data-postid="${post.id}"
