@@ -1,136 +1,110 @@
 <!DOCTYPE html>
-<!-- (xmlns:sec を追加) -->
 <html lang="ja" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>簡易掲示板</title>
-    <!-- (style.css へのリンク) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css" th:href="@{/css/style.css}">
 </head>
 <body>
 
-<!-- ログイン/ログアウト表示 -->
-<div style="text-align: right; margin-bottom: 10px; padding: 10px; background: #f9f9f9; border-bottom: 1px solid #ddd;">
-    <div sec:authorize="isAuthenticated()">
-        こんにちは, <strong sec:authentication="name"></strong> さん |
-        <form th:action="@{/logout}" method="post" style="display: inline;">
-            <button type="submit" style="background: none; border: none; color: #007bff; cursor: pointer; padding: 0; font-size: inherit;">ログアウト</button>
-        </form>
-    </div>
-    <div sec:authorize="isAnonymous()">
-        <a href="/login" th:href="@{/login}">ログイン</a> | <a href="/register" th:href="@{/register}">新規登録</a>
-    </div>
-</div>
-
-<div style="padding: 20px; max-width: 800px; margin: auto;">
-    <h1>投稿一覧</h1>
-    <!-- ログインしている時だけ「新規投稿」リンクを表示 -->
-    <a href="/new" th:href="@{/new}" sec:authorize="isAuthenticated()" style="display: inline-block; padding: 10px 15px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-bottom: 20px;">新規投稿はこちら</a>
-    <hr sec:authorize="isAuthenticated()">
-
-    <!-- 投稿一覧 -->
-    <div th:each="post : ${postPage.content}" style="border-bottom: 1px solid #ccc; padding: 15px 0;">
-
-        <!-- (投稿者名と日時の表示) -->
-        <small style="color: #555;">
-            <strong>投稿者: </strong>
-            <span th:if="${post.user != null}" th:text="${post.user.username}">ユーザー名</span>
-            <span th:if="${post.user == null}">（不明）</span>
-            |
-            <!-- ▼▼▼ 【ここを修正 (T(...) を post.formattedCreatedAt に変更)】 ▼▼▼ -->
-            <span th:text="${post.formattedCreatedAt}">投稿日時</span>
-            <!-- ▲▲▲ 【修正ここまで】 ▲▲▲ -->
-        </small>
-
-        <!-- (タイトルと内容) -->
-        <h2 th:text="${post.title}" style="margin-top: 5px; margin-bottom: 10px;">ここにタイトルが入る</h2>
-
-        <!-- (改行コードの変換) -->
-        <p th:utext="${#strings.replace(post.content, '\n', '<br />')}" style="margin-bottom: 15px;">ここに本文が入る</p>
-
-        <!-- ▼▼▼ 【いいね！機能のUI】 ▼▼▼ -->
-        <div class="like-container">
-            <button class="like-button"
-                    th:id="'like-btn-' + ${post.id}"
-                    th:data-postid="${post.id}"
-                    th:data-liked="${#lists.contains(currentUserLikePostIds, post.id)}"
-                    th:data-csrf-token="${_csrf.token}"
-                    th:data-csrf-header="${_csrf.headerName}"
-                    sec:authorize="isAuthenticated()"
-                    th:classappend="${#lists.contains(currentUserLikePostIds, post.id)} ? 'liked' : ''">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="like-icon">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-            </button>
-            <span class="like-count" th:id="'like-count-' + ${post.id}" th:text="${post.likes.size()}">0</span>
+<header class="p-3 bg-light border-bottom">
+    <div class="container d-flex justify-content-end">
+        <div sec:authorize="isAuthenticated()">
+            こんにちは, <strong sec:authentication="name"></strong> さん |
+            <form th:action="@{/logout}" method="post" class="d-inline">
+                <button type="submit" class="btn btn-link p-0 text-primary">ログアウト</button>
+            </form>
         </div>
-
-        <!-- ▲▲▲ 【いいね！機能ここまで】 ▲▲▲ -->
-
-
-        <!-- (ボタンの表示制御) -->
-        <div style="margin-top: 10px;"
-             sec:authorize="isAuthenticated()"
-             th:if="${post.user != null and #authentication.name == post.user.username}">
-
-            <a th:href="@{/edit/{id}(id=${post.id})}" style="color: #1a73e8; text-decoration: none;">編集</a>
-
-            <a th:href="@{/delete/{id}(id=${post.id})}"
-               onclick="return confirm('本当に削除してもよろしいですか？');"
-               style="margin-left: 10px; color: #d93025; text-decoration: none;">削除</a>
+        <div sec:authorize="isAnonymous()">
+            <a th:href="@{/login}" class="text-decoration-none me-2">ログイン</a> | <a th:href="@{/register}" class="text-decoration-none">新規登録</a>
         </div>
+    </div>
+</header>
+<main class="container my-5">
+    <h1 class="mb-4">投稿一覧</h1>
 
+    <a th:href="@{/new}" sec:authorize="isAuthenticated()" class="btn btn-primary mb-4">新規投稿はこちら</a>
+    <hr sec:authorize="isAuthenticated()" class="my-4">
+
+    <div th:each="post : ${postPage.content}" class="card mb-3 shadow-sm">
+        <div class="card-body">
+
+            <h2 class="card-title h4" th:text="${post.title}">ここにタイトルが入る</h2>
+
+            <small class="text-muted d-block mb-3">
+                <strong>投稿者: </strong>
+                <span th:if="${post.user != null}" th:text="${post.user.username}">ユーザー名</span>
+                <span th:if="${post.user == null}">(不明)</span>
+                |
+                <span th:text="${post.formattedCreatedAt}">投稿日時</span>
+            </small>
+
+            <p class="card-text" th:utext="${#strings.replace(post.content, '\n', '<br />')}">ここに本文が入る</p>
+
+            <div class="d-flex align-items-center mb-3">
+                <button class="like-button btn p-0"
+                        th:id="'like-btn-' + ${post.id}"
+                        th:data-postid="${post.id}"
+                        th:data-liked="${#lists.contains(currentUserLikePostIds, post.id)}"
+                        th:data-csrf-token="${_csrf.token}"
+                        th:data-csrf-header="${_csrf.headerName}"
+                        sec:authorize="isAuthenticated()"
+                        th:classappend="${#lists.contains(currentUserLikePostIds, post.id)} ? 'liked' : ''">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="like-icon">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                </button>
+                <span class="ms-1 text-muted" th:id="'like-count-' + ${post.id}" th:text="${post.likes.size()}">0</span>
+            </div>
+
+            <div class="mt-2"
+                 sec:authorize="isAuthenticated()"
+                 th:if="${post.user != null and #authentication.name == post.user.username}">
+
+                <a th:href="@{/edit/{id}(id=${post.id})}" class="btn btn-sm btn-outline-secondary me-2">編集</a>
+
+                <a th:href="@{/delete/{id}(id=${post.id})}"
+                   onclick="return confirm('本当に削除してもよろしいですか？');"
+                   class="btn btn-sm btn-outline-danger">削除</a>
+            </div>
+        </div>
     </div>
 
-    <!-- ▼▼▼ 【ページネーションUI】 ▼▼▼ -->
-    <nav th:if="${postPage.totalPages > 1}" aria-label="Page navigation" style="margin-top: 20px;">
-        <ul style="display: flex; list-style: none; padding: 0; justify-content: center; align-items: center;">
+    <nav th:if="${postPage.totalPages > 1}" aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
 
-            <!-- 「前へ」リンク -->
-            <li th:classappend="${postPage.isFirst()} ? 'disabled' : ''" style="margin: 0 5px;">
-                <a th:if="${!postPage.isFirst()}" th:href="@{/(page=${postPage.number - 1})}" aria-label="Previous" style="text-decoration: none; padding: 8px 12px; border: 1px solid #ddd; color: #007bff; border-radius: 4px;">
+            <li class="page-item" th:classappend="${postPage.isFirst()} ? 'disabled' : ''">
+                <a class="page-link" th:if="${!postPage.isFirst()}" th:href="@{/(page=${postPage.number - 1})}" aria-label="Previous">
                     <span aria-hidden="true">&laquo;</span>
                 </a>
-                <span th:if="${postPage.isFirst()}" style="padding: 8px 12px; border: 1px solid #eee; color: #ccc; border-radius: 4px;">
-                        <span aria-hidden="true">&laquo;</span>
-                    </span>
+                <span class="page-link" th:if="${postPage.isFirst()}" aria-hidden="true">&laquo;</span>
             </li>
 
-            <!-- ページ番号リンク -->
-            <li th:each="pageNum : ${#numbers.sequence(0, postPage.totalPages - 1)}"
-                th:if="${postPage.totalPages <= 7 or (pageNum >= postPage.number - 2 and pageNum <= postPage.number + 2) or pageNum == 0 or pageNum == postPage.totalPages - 1}"
-                th:classappend="${pageNum == postPage.number} ? 'active' : ''"
-                style="margin: 0 5px;">
+            <li class="page-item" th:each="pageNum : ${#numbers.sequence(0, postPage.totalPages - 1)}"
+                th:classappend="${pageNum == postPage.number} ? 'active' : ''">
 
-                <span th:if="${(pageNum == postPage.number - 3 and pageNum != 0) or (pageNum == postPage.number + 3 and pageNum != postPage.totalPages - 1)}"
-                      style="padding: 8px 12px; border: 1px solid transparent; color: #555;">...</span>
-
-                <span th:if="${pageNum == postPage.number and (postPage.totalPages > 7 and (pageNum < postPage.number - 2 or pageNum > postPage.number + 2) and pageNum != 0 and pageNum != postPage.totalPages - 1) == false}"
-                      style="padding: 8px 12px; border: 1px solid #007bff; background-color: #007bff; color: white; border-radius: 4px;"
-                      th:text="${pageNum + 1}">1</span>
-                <a th:if="${pageNum != postPage.number and (postPage.totalPages > 7 and (pageNum < postPage.number - 2 or pageNum > postPage.number + 2) and pageNum != 0 and pageNum != postPage.totalPages - 1) == false}"
+                <a class="page-link" th:if="${pageNum != postPage.number}"
                    th:href="@{/(page=${pageNum})}"
-                   style="text-decoration: none; padding: 8px 12px; border: 1px solid #ddd; color: #007bff; border-radius: 4px;"
                    th:text="${pageNum + 1}">1</a>
+
+                <span class="page-link" th:if="${pageNum == postPage.number}"
+                      th:text="${pageNum + 1}">1</span>
             </li>
 
-            <!-- 「次へ」リンク -->
-            <li th:classappend="${postPage.isLast()} ? 'disabled' : ''" style="margin: 0 5px;">
-                <a th:if="${!postPage.isLast()}" th:href="@{/(page=${postPage.number + 1})}" aria-label="Next" style="text-decoration: none; padding: 8px 12px; border: 1px solid #ddd; color: #007bff; border-radius: 4px;">
+
+            <li class="page-item" th:classappend="${postPage.isLast()} ? 'disabled' : ''">
+                <a class="page-link" th:if="${!postPage.isLast()}" th:href="@{/(page=${postPage.number + 1})}" aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
                 </a>
-                <span th:if="${postPage.isLast()}" style="padding: 8px 12px; border: 1px solid #eee; color: #ccc; border-radius: 4px;">
-                        <span aria-hidden="true">&raquo;</span>
-                    </span>
+                <span class="page-link" th:if="${postPage.isLast()}" aria-hidden="true">&raquo;</span>
             </li>
         </ul>
     </nav>
-    <!-- ▲▲▲ 【ページネーションUIここまで】 ▲▲▲ -->
+</main>
 
-</div>
-
-<!-- ▼▼▼ 【JavaScript】 ▼▼▼ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // ページ上のすべての「いいね！」ボタンを取得
     const likeButtons = document.querySelectorAll('.like-button');
@@ -187,8 +161,5 @@
         });
     });
 </script>
-<!-- ▲▲▲ 【JavaScriptここまで】 ▲▲▲ -->
-
 </body>
 </html>
-
