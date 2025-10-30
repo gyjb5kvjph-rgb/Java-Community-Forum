@@ -145,7 +145,7 @@
             const csrfHeader = this.dataset.csrfHeader;
 
             // APIのURL
-            const url = `/api/posts/toggle-like/${postId}`; // ★ URLを修正
+            const url = `/api/posts/${postId}/toggle-like`; // ★ URLを修正
 
             // JavaScriptの fetch API を使ってサーバーにPOSTリクエストを送信
             fetch(url, {
