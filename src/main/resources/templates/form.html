@@ -25,7 +25,7 @@
 <div class="container" style="max-width: 600px;">
     <h1 class="mb-4">新規投稿</h1>
 
-    <form th:action="@{/create}" method="post" th:object="${post}">
+    <form th:action="@{/create}" method="post" th:object="${post}" onsubmit="normalizeTextarea(this)">
         <div class="mb-3">
             <label for="title" class="form-label">タイトル:</label>
             <input type="text" id="title" th:field="*{title}" class="form-control" required>
@@ -45,5 +45,24 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    /**
+     * フォーム送信前に textarea の改行コードを標準的な \n に統一する関数
+     * @param {HTMLFormElement} form
+     */
+    function normalizeTextarea(form) {
+        // 'content'という名前の textarea 要素を取得
+        const textarea = form.elements['content'];
+
+        if (textarea) {
+            let content = textarea.value;
+            // WindowsのCRLF(\r\n)をLF(\n)に統一
+            content = content.replace(/\r\n/g, '\n');
+            textarea.value = content;
+        }
+        // return true; (正常に送信を続行)
+    }
+</script>
 </body>
 </html>
