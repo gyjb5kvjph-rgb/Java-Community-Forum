@@ -33,6 +33,18 @@ public class PostController {
     @Autowired
     private LikeRepository likeRepository; // ★ LikeRepository をAutowired
 
+    // --- ヘルパーメソッド ---
+    /**
+     * テキストエリアから送信された改行コード (\r\n) を \n に正規化する
+     */
+    private String normalizeContent(String content) {
+        if (content != null) {
+            // WindowsのCRLF(\r\n)をLF(\n)に統一
+            return content.replaceAll("\r\n", "\n");
+        }
+        return null;
+    }
+
     /**
      * トップページ（投稿一覧） (★ N+1問題対策済みに変更)
      * @param model ビューに渡すモデル
@@ -94,7 +106,7 @@ public class PostController {
     }
 
     /**
-     * 投稿処理 (★ 安全なコードに修正済み)
+     * 投稿処理 (★ 改行コード正規化を追加)
      * ログイン中のユーザー情報を取得し、投稿に紐づける
      */
     @PostMapping("/create")
@@ -114,6 +126,9 @@ public class PostController {
 
         // 投稿(Post)に、見つけたユーザー(User)をセットする
         post.setUser(currentUser);
+
+        // ★ 改行コードを正規化してセット
+        post.setContent(normalizeContent(post.getContent()));
 
         postRepository.save(post);
         return "redirect:/";
@@ -137,7 +152,7 @@ public class PostController {
     }
 
     /**
-     * 更新処理 (★ 安全なコードに修正済み)
+     * 更新処理 (★ 改行コード正規化を追加)
      */
     @PostMapping("/update")
     public String updatePost(@ModelAttribute Post post) {
@@ -147,7 +162,10 @@ public class PostController {
         // (修正) existingPost.getUser() != null のチェックを追加
         if (existingPost != null && existingPost.getUser() != null && existingPost.getUser().getUsername().equals(currentUsername)) {
             existingPost.setTitle(post.getTitle());
-            existingPost.setContent(post.getContent());
+
+            // ★ 改行コードを正規化してセット
+            existingPost.setContent(normalizeContent(post.getContent()));
+
             postRepository.save(existingPost);
         }
 
@@ -170,4 +188,3 @@ public class PostController {
         return "redirect:/";
     }
 }
-
