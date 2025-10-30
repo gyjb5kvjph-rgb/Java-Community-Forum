@@ -1,64 +1,112 @@
 /* ページ全体の基本設定 */
 body {
     font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, sans-serif;
-    margin: 0;
-    background-color: #f9f9f9; /* 明るくクリーンな背景 */
-    color: #333;
+    margin: 0; /* ページ全体の余白を削除 */
+    background-color: #f4f4f4; /* 少し薄いグレーの背景色 */
+    color: #333; /* 基本の文字色 */
 }
 
 /* h1 (大見出し) のスタイル */
 h1 {
-    color: #2c3e50; /* 濃いネイビー/グレー */
-    border-bottom: 2px solid #2c3e50;
-    padding-bottom: 15px; /* 下線との距離を広げる */
+    color: #005a9c; /* 濃い青色 */
+    border-bottom: 2px solid #005a9c;
+    padding-bottom: 10px;
 }
 
 /* 投稿一つひとつの囲い (div) */
-div[th\\:each] {
-    background-color: #ffffff;
-    border: 1px solid #e0e0e0; /* 枠線を薄いグレーに変更 */
-    border-radius: 4px; /* 角をシャープに */
-    padding: 20px; /* パディングを増やしてモダンな余白を確保 */
-    margin-bottom: 15px;
-    box-shadow: none; /* 影を削除し、硬質な印象に */
+div[th\\:each] { /* Thymeleafの th:each が付いたdivを狙う指定 */
+    background-color: #ffffff; /* 白色の背景 */
+    border: 1px solid #ddd;
+    border-radius: 8px; /* 角を丸くする */
+    padding: 15px;
+    margin-bottom: 15px; /* 下の投稿との隙間 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* 薄い影をつける */
 }
 
 /* リンク (aタグ) のスタイル */
 a {
-    color: #3498db; /* 落ち着いた青色 */
-    text-decoration: none;
+    color: #007bff;
+    text-decoration: none; /* 下線を消す */
 }
 
 a:hover {
-    text-decoration: underline;
+    text-decoration: underline; /* マウスを乗せたら下線を出す */
 }
 
 /* ボタン (submit) のスタイル */
 button[type="submit"] {
-    background-color: #3498db; /* 落ち着いた青色 */
+    background-color: #007bff; /* 青色 */
     color: white;
     border: none;
-    padding: 12px 20px; /* パディングを増やして大きくする */
-    border-radius: 4px; /* 角をシャープに */
-    cursor: pointer;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer; /* マウスカーソルを指の形にする */
     font-size: 16px;
-    transition: background-color 0.2s; /* ホバーアニメーション */
 }
 
 button[type="submit"]:hover {
-    background-color: #2980b9;
+    background-color: #0056b3; /* マウスを乗せたら少し濃い青に */
 }
 
 /* フォームの入力欄 */
 input[type="text"], textarea {
     width: 90%;
-    max-width: 500px;
-    padding: 10px; /* パディングを少し増やして入力しやすく */
-    border: 1px solid #bdbdbd; /* 薄い枠線 */
-    border-radius: 4px; /* シャープに */
+    max-width: 500px; /* 横幅が広くなりすぎないように */
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
     font-size: 16px;
-    box-sizing: border-box; /* paddingを含めて幅を計算 */
 }
 textarea {
     width: 95%;
-    max-width: 5
+    max-width: 500px;
+}
+
+/* ▼▼▼ 【いいね！ボタンのスタイル】 ▼▼▼ */
+
+/* いいねボタンとカウントのコンテナ */
+.like-container {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+/* いいねボタン（ハートマーク） */
+.like-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    /* (ボタン自体の色はCSSで制御) */
+    color: #aaa; /* デフォルトの色（グレー） */
+}
+
+/* いいねボタン内のSVGアイコンのサイズ */
+.like-button .like-icon {
+    width: 24px;
+    height: 24px;
+    transition: color 0.2s ease, transform 0.2s ease; /* アニメーション */
+    /* 崩れ対策：fill を明示的に currentColor に設定 */
+    fill: currentColor;
+}
+
+/* いいねボタンにマウスを乗せた時の色 */
+.like-button:hover .like-icon {
+    color: #e0245e; /* ホバー時に赤色に */
+}
+
+/* 「いいね！」が押された状態 (.liked クラスが付いた時) のスタイル */
+.like-button.liked .like-icon {
+    color: #e0245e; /* 赤色 */
+    fill: #e0245e;   /* SVGの内側を塗りつぶす */
+}
+
+/* いいね！の数 */
+.like-count {
+    margin-left: 5px;
+    font-size: 16px;
+    color: #555;
+    min-width: 20px; /* 数字が変動してもレイアウトが崩れないように */
+}
