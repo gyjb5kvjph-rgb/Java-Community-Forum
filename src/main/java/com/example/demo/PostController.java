@@ -74,8 +74,6 @@ public class PostController {
             // 3. ★ N+1対策: IDのリストを使って、関連データ(User, Likes, Comments)をまとめて取得
             //    PostRepository 側も修正が必要な場合がありますが、まずはこのまま進めます。
             //    (N+1問題がコメントで再発する可能性があります)
-            //    → findAllPostsWithUserAndLikes を findAllPostsWithDetails などにリネームし、
-            //       Comment も JOIN FETCH するのが理想です。
 
             // ひとまず、コメント取得のために findAllById を使います。
             // ★ N+1対策クエリに コメント も含めるように PostRepository を修正するのがベストですが、
@@ -209,10 +207,7 @@ public class PostController {
 
     /**
      * 新しいコメントを保存する処理
-     * @param comment コメント内容 (content フィールドのみフォームから受け取る)
-     * @param postId コメント対象の投稿ID
-     * @param redirectAttributes リダイレクト時にメッセージを渡すため
-     * @return リダイレクト先のURL
+     * (既存のまま)
      */
     @PostMapping("/comments/create")
     public String createComment(@ModelAttribute Comment comment,
@@ -250,6 +245,7 @@ public class PostController {
 
     /**
      * コメント編集フォームを表示
+     * (既存のまま)
      */
     @GetMapping("/comments/edit/{id}")
     public String showCommentEditForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
@@ -275,6 +271,7 @@ public class PostController {
 
     /**
      * コメント更新処理
+     * (既存のまま)
      */
     @PostMapping("/comments/update")
     public String updateComment(@ModelAttribute Comment comment, RedirectAttributes redirectAttributes) {
@@ -299,6 +296,33 @@ public class PostController {
         commentRepository.save(existingComment);
 
         // 6. 投稿一覧に戻る
+        return "redirect:/";
+    }
+
+    // ▼▼▼ 【コメント削除機能の追加】 ▼▼▼
+    /**
+     * コメント削除処理
+     */
+    @GetMapping("/comments/delete/{id}")
+    public String deleteComment(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+
+        // 1. 削除対象のコメントをDBから取得
+        Comment comment = commentRepository.findById(id)
+                .orElse(null);
+
+        // 2. ログイン中のユーザー名を取得
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 3. セキュリティチェック (コメントが存在し、かつ投稿者本人であること)
+        if (comment == null || comment.getUser() == null || !comment.getUser().getUsername().equals(currentUsername)) {
+            // redirectAttributes.addFlashAttribute("errorMessage", "削除権限がありません。");
+            return "redirect:/";
+        }
+
+        // 4. データベースから削除
+        commentRepository.delete(comment);
+
+        // 5. 投稿一覧に戻る
         return "redirect:/";
     }
     // ▲▲▲ 【コメント機能 ここまで】 ▲▲▲

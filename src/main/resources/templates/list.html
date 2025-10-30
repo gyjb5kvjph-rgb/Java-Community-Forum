@@ -85,8 +85,11 @@
                          th:if="${comment.user != null and #authentication.name == comment.user.username}">
 
                         <a th:href="@{/comments/edit/{id}(id=${comment.id})}"
-                           class="btn btn-sm btn-link text-secondary p-0" style="font-size: 0.8rem;">編集</a>
+                           class="btn btn-sm btn-link text-secondary p-0 me-2" style="font-size: 0.8rem;">編集</a>
 
+                        <a th:href="@{/comments/delete/{id}(id=${comment.id})}"
+                           onclick="return confirm('このコメントを本当に削除してもよろしいですか？');"
+                           class="btn btn-sm btn-link text-danger p-0" style="font-size: 0.8rem;">削除</a>
                     </div>
                 </div>
 
