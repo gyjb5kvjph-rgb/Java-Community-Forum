@@ -34,10 +34,8 @@ public class PostController {
     @Autowired
     private LikeRepository likeRepository;
 
-    // ▼▼▼ CommentRepository を Autowired ▼▼▼
     @Autowired
     private CommentRepository commentRepository;
-    // ▲▲▲ 追加 ▲▲▲
 
     // --- ヘルパーメソッド ---
     /**
@@ -52,7 +50,7 @@ public class PostController {
     }
 
     /**
-     * トップページ（投稿一覧） (★ N+1問題対策済みに変更)
+     * トップページ（投稿一覧） (★ N+1問題対策 修正済み)
      * @param model ビューに渡すモデル
      * @param page リクエストされたページ番号 (デフォルトは0)
      * @return テンプレート名
@@ -71,15 +69,11 @@ public class PostController {
         if (postIds.isEmpty()) {
             posts = Collections.emptyList();
         } else {
-            // 3. ★ N+1対策: IDのリストを使って、関連データ(User, Likes, Comments)をまとめて取得
-            //    PostRepository 側も修正が必要な場合がありますが、まずはこのまま進めます。
-            //    (N+1問題がコメントで再発する可能性があります)
-
-            // ひとまず、コメント取得のために findAllById を使います。
-            // ★ N+1対策クエリに コメント も含めるように PostRepository を修正するのがベストですが、
-            //    ここでは Post エンティティの @OrderBy でソートされたコメントが
-            //    N+1でロードされることを前提とします。
-            posts = postRepository.findAllById(postIds); // N+1対策クエリを一旦停止
+            // 3. ★ N+1対策: 修正したクエリを呼び出す
+            //    (User, Likes, Comments をJOIN FETCHする)
+            // ▼▼▼ 【ここを修正】 ▼▼▼
+            posts = postRepository.findAllPostsWithUserAndLikes(postIds);
+            // ▲▲▲ 修正 ▲▲▲
 
             // 4. (重要) DBから取得したリストはID順になっているため、元のcreatedAt順（postIdsの順）に並び替える
             posts.sort((p1, p2) -> Long.compare(postIds.indexOf(p1.getId()), postIds.indexOf(p2.getId())));
@@ -299,9 +293,9 @@ public class PostController {
         return "redirect:/";
     }
 
-    // ▼▼▼ 【コメント削除機能の追加】 ▼▼▼
     /**
      * コメント削除処理
+     * (既存のまま)
      */
     @GetMapping("/comments/delete/{id}")
     public String deleteComment(@PathVariable Long id, RedirectAttributes redirectAttributes) {
