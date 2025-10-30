@@ -34,7 +34,7 @@ public class PostController {
     @Autowired
     private LikeRepository likeRepository;
 
-    // ▼▼▼ 【ステップ4】 CommentRepository を Autowired ▼▼▼
+    // ▼▼▼ CommentRepository を Autowired ▼▼▼
     @Autowired
     private CommentRepository commentRepository;
     // ▲▲▲ 追加 ▲▲▲
@@ -76,13 +76,8 @@ public class PostController {
             //    (N+1問題がコメントで再発する可能性があります)
             //    → findAllPostsWithUserAndLikes を findAllPostsWithDetails などにリネームし、
             //       Comment も JOIN FETCH するのが理想です。
-            //    → 今回は N+1 対策クエリに Comment を含める修正も必要です。
-            //       PostRepository の findAllPostsWithUserAndLikes を修正する必要があります。
-            //       ここでは、ひとまずN+1を許容したまま進めます。
 
             // ひとまず、コメント取得のために findAllById を使います。
-            // posts = postRepository.findAllPostsWithUserAndLikes(postIds);
-
             // ★ N+1対策クエリに コメント も含めるように PostRepository を修正するのがベストですが、
             //    ここでは Post エンティティの @OrderBy でソートされたコメントが
             //    N+1でロードされることを前提とします。
@@ -208,7 +203,10 @@ public class PostController {
         return "redirect:/";
     }
 
-    // ▼▼▼ 【ステップ4】 コメント保存メソッドを追加 ▼▼▼
+    // =================================================================
+    // ▼▼▼ 【コメント機能】 ▼▼▼
+    // =================================================================
+
     /**
      * 新しいコメントを保存する処理
      * @param comment コメント内容 (content フィールドのみフォームから受け取る)
@@ -249,5 +247,59 @@ public class PostController {
         // 6. コメント投稿後は元の投稿一覧（または詳細ページ）にリダイレクト
         return "redirect:/";
     }
-    // ▲▲▲ 追加ここまで ▲▲▲
+
+    /**
+     * コメント編集フォームを表示
+     */
+    @GetMapping("/comments/edit/{id}")
+    public String showCommentEditForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+
+        // 1. コメントを取得
+        Comment comment = commentRepository.findById(id)
+                .orElse(null);
+
+        // 2. ログイン中のユーザー名を取得
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 3. セキュリティチェック
+        // コメントが存在しない、または投稿者本人でない場合はリダイレクト
+        if (comment == null || comment.getUser() == null || !comment.getUser().getUsername().equals(currentUsername)) {
+            // redirectAttributes.addFlashAttribute("errorMessage", "編集権限がありません。");
+            return "redirect:/";
+        }
+
+        // 4. フォームにコメントオブジェクトを渡す
+        model.addAttribute("comment", comment);
+        return "comment_edit"; // comment_edit.html を表示
+    }
+
+    /**
+     * コメント更新処理
+     */
+    @PostMapping("/comments/update")
+    public String updateComment(@ModelAttribute Comment comment, RedirectAttributes redirectAttributes) {
+
+        // 1. 更新対象のコメントをDBから取得
+        Comment existingComment = commentRepository.findById(comment.getId())
+                .orElse(null);
+
+        // 2. ログイン中のユーザー名を取得
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 3. セキュリティチェック (コメントが存在し、かつ投稿者本人であること)
+        if (existingComment == null || existingComment.getUser() == null || !existingComment.getUser().getUsername().equals(currentUsername)) {
+            // redirectAttributes.addFlashAttribute("errorMessage", "更新権限がありません。");
+            return "redirect:/";
+        }
+
+        // 4. 内容を更新（改行コードも正規化）
+        existingComment.setContent(normalizeContent(comment.getContent()));
+
+        // 5. データベースに保存
+        commentRepository.save(existingComment);
+
+        // 6. 投稿一覧に戻る
+        return "redirect:/";
+    }
+    // ▲▲▲ 【コメント機能 ここまで】 ▲▲▲
 }
