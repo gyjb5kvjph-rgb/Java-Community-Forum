@@ -1,8 +1,8 @@
 -- 既存のテーブルがあれば、関連する制約ごと削除 (CASCADE)
 -- (LikesはPostとUserに依存、PostはUserに依存するため、この順序で削除)
-DROP TABLE IF EXISTS likes CASCADE;
-DROP TABLE IF EXISTS posts CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+--DROP TABLE IF EXISTS likes CASCADE;
+--DROP TABLE IF EXISTS posts CASCADE;
+--DROP TABLE IF EXISTS users CASCADE;
 
 -- ユーザーテーブル (変更なし)
 CREATE TABLE users (
