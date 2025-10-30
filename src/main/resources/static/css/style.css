@@ -62,7 +62,7 @@ textarea {
     max-width: 500px;
 }
 
-/* ▼▼▼ 【いいね！ボタンのスタイルを追記】 ▼▼▼ */
+/* ▼▼▼ 【いいね！ボタンのスタイル】 ▼▼▼ */
 
 /* いいねボタンとカウントのコンテナ */
 .like-container {
@@ -88,6 +88,8 @@ textarea {
     width: 24px;
     height: 24px;
     transition: color 0.2s ease, transform 0.2s ease; /* アニメーション */
+    /* 崩れ対策：fill を明示的に currentColor に設定 */
+    fill: currentColor;
 }
 
 /* いいねボタンにマウスを乗せた時の色 */
@@ -108,4 +110,3 @@ textarea {
     color: #555;
     min-width: 20px; /* 数字が変動してもレイアウトが崩れないように */
 }
-
