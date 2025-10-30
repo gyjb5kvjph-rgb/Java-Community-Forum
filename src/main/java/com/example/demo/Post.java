@@ -2,12 +2,14 @@ package com.example.demo;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.time.ZoneId; // ★ JST変換のために追加
-import java.time.format.DateTimeFormatter; // ★ JST変換のために追加
-import java.util.Set; // ★ Likesのために追加
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Set;
+// ▼▼▼ 【ステップ3】 java.util.List をインポート ▼▼▼
+import java.util.List;
 
 @Entity
-@Table(name = "posts") // ★ テーブル名を "posts" に変更 (schema.sqlと合わせる)
+@Table(name = "posts")
 public class Post {
 
     @Id
@@ -16,19 +18,29 @@ public class Post {
 
     private String title;
 
-    @Column(columnDefinition = "TEXT") // ★ contentカラムの型をTEXTに変更
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY) // ★ パフォーマンスのためLAZYに変更
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    // --- ▼▼▼ 【Likesの関連付けを追加】 ▼▼▼ ---
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY) // ★ LAZYに変更
+    // --- Likesの関連付け ---
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Like> likes;
+
+    // --- ▼▼▼ 【ステップ3】 Comments の関連付けを追加 ▼▼▼ ---
+    /**
+     * この投稿に紐づくコメントのリスト
+     * コメントは作成日時の昇順（古い順）で並び替えられます
+     */
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("createdAt ASC") // コメントを古い順にソート
+    private List<Comment> comments; // 順序を保持するために List を使用
     // --- ▲▲▲ ここまで追加 ▲▲▲ ---
+
 
     // --- ゲッターとセッター ---
 
@@ -72,7 +84,7 @@ public class Post {
         this.user = user;
     }
 
-    // --- ▼▼▼ 【Likesのゲッター/セッターを追加】 ▼▼▼ ---
+    // --- Likesのゲッター/セッター ---
     public Set<Like> getLikes() {
         return likes;
     }
@@ -80,36 +92,34 @@ public class Post {
     public void setLikes(Set<Like> likes) {
         this.likes = likes;
     }
+
+    // --- ▼▼▼ 【ステップ3】 Comments のゲッター/セッターを追加 (エラー解消に必須) ▼▼▼ ---
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
+    }
     // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
 
-    // --- ▼▼▼ 【JST変換用メソッドの追加】 ▼▼▼ ---
-    /**
-     * Thymeleaf (list.html) で日本時間(JST)を表示するためのヘルパーメソッド。
-     * T(...) のセキュリティエラーを回避するために、Java側で変換処理を行う。
-     * @return "yyyy/MM/dd HH:mm" 形式の日本時間の文字列
-     */
+    // --- JST変換用メソッド ---
     public String getFormattedCreatedAt() {
         if (this.createdAt == null) {
             return "";
         }
-        // 1. DBから取得した時刻(UTC)を "UTC" タイムゾーンとして定義
         ZoneId utcZone = ZoneId.of("UTC");
-        // 2. 変換したいタイムゾーン "Asia/Tokyo" (JST) を定義
         ZoneId jstZone = ZoneId.of("Asia/Tokyo");
-        // 3. JSTに変換
         LocalDateTime jstDateTime = this.createdAt.atZone(utcZone)
                 .withZoneSameInstant(jstZone)
                 .toLocalDateTime();
-        // 4. フォーマット
         return jstDateTime.format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm"));
     }
-    // --- ▲▲▲ ここまで追加 ▲▲▲ ---
 
+    // --- コールバックメソッド ---
     @PrePersist
     protected void onCreate() {
-        // 投稿日時を（UTCで）自動設定
         this.createdAt = LocalDateTime.now(ZoneId.of("UTC"));
     }
 }
-
