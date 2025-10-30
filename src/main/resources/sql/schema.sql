@@ -52,3 +52,19 @@ SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) FROM users) + 1, fals
 SELECT setval('posts_id_seq', (SELECT COALESCE(MAX(id), 0) FROM posts) + 1, false);
 
 -- (Likesテーブルは複合主キーであり、BIGSERIALではないため、シーケンスリセットは不要)
+
+-- ▼▼▼ 【Commentsテーブルの追加】 ▼▼▼
+CREATE TABLE comments (
+    id BIGSERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    user_id BIGINT NOT NULL,
+    post_id BIGINT NOT NULL,
+
+    -- 外部キーの定義
+    -- ユーザーが削除されたら、そのコメントも削除
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    -- 投稿が削除されたら、そのコメントも削除
+    FOREIGN KEY (post_id) REFERENCES posts (id) ON DELETE CASCADE
+);
+-- ▲▲▲ ここまで追加 ▲▲▲
