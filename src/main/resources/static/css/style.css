@@ -1,131 +1,110 @@
-/* ページ全体の基本設定 */
+/* =================================
+ * 基本設定 (ダークテーマ)
+ * ================================= */
 body {
-    font-family: 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN W3', Meiryo, メイリオ, sans-serif;
-    margin: 0;
-    /* Bootstrapの背景と合わせ、クリーンな印象を維持 */
-    background-color: #f9f9f9;
-    color: #333;
+    /* 真っ黒ではなく、少し濃いグレーに設定 */
+    background-color: #121212;
+    /* テキストを白に設定 */
+    color: #E0E0E0;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 20px;
 }
 
-/* -------------------- 共通要素の独自化 -------------------- */
-
-/* h1 (大見出し) のスタイル */
-h1 {
-    color: #2c3e50; /* 濃いネイビー/グレーに変更 */
-    border-bottom: 2px solid #2c3e50;
-    padding-bottom: 15px; /* 下線との距離を広げる */
+h1, h2, h3, strong {
+    color: #FFFFFF;
 }
 
-/* リンク (aタグ) のスタイル */
+/* 投稿コンテナのスタイル */
+div[style*="border-bottom"] {
+    border-bottom: 1px solid #333 !important;
+    padding: 15px 0;
+    margin-bottom: 15px;
+}
+
+/* フォームの入力フィールドとテキストエリア */
+input[type="text"], textarea {
+    background-color: #2C2C2C;
+    color: #E0E0E0;
+    border: 1px solid #444;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+/* =================================
+ * リンクとボタン (青/紫のアクセント)
+ * ================================= */
+
+/* 標準リンク */
 a {
-    color: #3498db; /* 落ち着いた青色 */
+    color: #BB86FC; /* 紫系のアクセントカラー */
     text-decoration: none;
 }
-
 a:hover {
+    color: #3700B3; /* 濃い紫 */
     text-decoration: underline;
 }
 
-/* -------------------- Bootstrap スタイルの上書き（硬質化） -------------------- */
-
-/* 1. 全体的な角丸を排除し、硬質な印象を強調 */
-/* Bootstrap のデフォルトの角丸を強制的に無効化 */
-.card,
-.btn,
-.form-control,
-.alert {
-    border-radius: 0 !important;
+/* ログアウト、ログイン、新規登録のリンク */
+div[style*="text-align: right"] a, button[type="submit"][style*="display: inline"] {
+    color: #03DAC6; /* 水色のアクセントカラー */
 }
 
-/* 2. 投稿カードの枠線と影を調整（Bootstrap card クラスの上書き） */
-.card {
-    border: 2px solid #2c3e50; /* 濃いネイビーの太い枠線を追加 */
-    box-shadow: none !important; /* Bootstrapの影を無効化 */
-}
-.card-body {
-    padding: 20px; /* カード内のパディングを調整 */
-}
-
-/* -------------------- ボタンとフォームの独自スタイル -------------------- */
-
-/* プライマリボタンの色と形状の統一 */
-.btn-primary,
-button[type="submit"] {
-    background-color: #1a567a; /* 暗い青（硬質なトーン） */
-    border-color: #1a567a;
+/* 通常のボタン（投稿する、更新する など） */
+button {
+    background-color: #BB86FC; /* 紫色の背景 */
     color: white;
-    padding: 12px 20px; /* パディングを増やして大きくする */
-}
-
-.btn-primary:hover,
-button[type="submit"]:hover {
-    background-color: #0d3851; /* ホバー時はさらに暗く */
-    border-color: #0d3851;
-}
-
-/* フォームの入力欄（Bootstrap form-control の上書き） */
-input[type="text"],
-textarea {
-    width: 100%; /* Bootstrapで幅が広がるため、max-widthはHTML側で制御 */
-    padding: 10px;
-    border: 1px solid #bdbdbd;
-    border-radius: 0 !important; /* 角丸を強制排除 */
-    font-size: 16px;
-    box-sizing: border-box;
-}
-
-/* -------------------- 旧 div[th:each] スタイルの削除（cardに移行） --------------------
-   ※ div[th\:\:each] のセレクタは使わず、Bootstrapの .card クラスに置き換えます
-*/
-
-/* -------------------- いいね！ボタンのスタイル -------------------- */
-
-/* いいねボタンとカウントのコンテナ */
-.d-flex.align-items-center { /* Bootstrapのクラスに合わせたセレクタ */
-    margin-top: 10px;
-}
-
-/* いいねボタン（ハートマーク） */
-.like-button {
-    background: none;
     border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
     cursor: pointer;
-    padding: 5px;
-    display: flex;
-    align-items: center;
-    color: #aaa; /* デフォルトの色（グレー） */
-}
-
-/* いいねボタン内のSVGアイコンのサイズ */
-.like-button .like-icon {
-    width: 24px;
-    height: 24px;
-    transition: color 0.2s ease, transform 0.2s ease;
-    fill: currentColor;
-}
-
-/* いいねボタンにマウスを乗せた時の色 */
-.like-button:hover .like-icon {
-    color: #e74c3c; /* 落ち着いた赤にホバー */
-}
-
-/* 「いいね！」が押された状態 (.liked クラスが付いた時) のスタイル */
-.like-button.liked .like-icon {
-    color: #e74c3c; /* 落ち着いた赤色 */
-    fill: #e74c3c;
-}
-
-/* いいね！の数 */
-.ms-1.text-muted { /* Bootstrapのクラスに合わせたセレクタ */
-    margin-left: 5px !important;
     font-size: 16px;
-    color: #555 !important;
+    transition: background-color 0.3s;
+}
+button:hover {
+    background-color: #9A67EA; /* ホバーで少し明るい紫 */
 }
 
-/* -------------------- 【改行問題の最終解決策】 -------------------- */
+/* 削除ボタン（赤色） */
+a[style*="color: red"], button.delete-btn {
+    background: none;
+    border: 1px solid #CF6679;
+    color: #CF6679 !important; /* 赤系のアクセントカラー */
+    padding: 5px 10px;
+    border-radius: 3px;
+    margin-left: 10px;
+    transition: background-color 0.3s;
+}
+a[style*="color: red"]:hover, button.delete-btn:hover {
+    background-color: #CF6679;
+    color: #121212 !important;
+}
 
-/* 投稿本文を表示する要素に、改行と折り返しを強制的に適用 */
-.card-text {
-    /* \n を改行として扱い、要素の端で自動的に折り返す */
-    white-space: pre-wrap !important;
+/* 編集ボタン（白/グレーの枠線） */
+a[th:href*="/edit/"] {
+    background: none;
+    border: 1px solid #E0E0E0;
+    color: #E0E0E0;
+    padding: 5px 10px;
+    border-radius: 3px;
+    text-decoration: none;
+}
+a[th:href*="/edit/"]:hover {
+    background-color: #E0E0E0;
+    color: #121212;
+}
+
+/* =================================
+ * フッターのスタイル
+ * ================================= */
+footer {
+    border-top: 1px solid #333;
+    padding-top: 15px;
+    margin-top: 30px;
+    text-align: center;
+    font-size: 0.9em;
+}
+footer a {
+    color: #BB86FC;
+    margin: 0 5px;
 }
