@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+<footer th:fragment="commonFooter" class="bg-light p-3 mt-4 border-top">
+    <div class="container text-center">
+        <p class="mb-0">
+            &copy; 2024 Your App Name |
+            <a th:href="@{/terms}">利用規約</a> |
+            <a th:href="@{/privacy}">プライバシーポリシー</a>
+        </p>
+    </div>
+</footer>
+</body>
+</html>
