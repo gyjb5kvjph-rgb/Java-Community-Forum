@@ -52,4 +52,22 @@ public class AuthController {
         // 登録後はログインページにリダイレクト
         return "redirect:/login";
     }
+
+    // ▼▼▼ 【フッターリンク用メソッドを追加】 ▼▼▼
+    /**
+     * 利用規約ページを表示
+     */
+    @GetMapping("/terms")
+    public String showTerms() {
+        return "terms"; // terms.html を表示
+    }
+
+    /**
+     * プライバシーポリシーページを表示
+     */
+    @GetMapping("/privacy")
+    public String showPrivacy() {
+        return "privacy"; // privacy.html を表示
+    }
+    // ▲▲▲ 追加ここまで ▲▲▲
 }
